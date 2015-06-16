@@ -1,0 +1,9 @@
+<launch>
+    <node pkg="video_handler" type="vhandler" name="vhandler" clear_params="true" output="screen">
+        <param name="stream_from_file" value="true" />
+        <param name="device_id" value="0" />
+        <param name="filepath" value="/mnt/hgfs/Data/ants_videos/A8R9.m2ts" />
+        <param name="topicname" value="/camera/image_raw" />
+        <param name="framerate" value="30" />
+    </node>
+</launch>

@@ -28,4 +28,14 @@ you can launch the node from launch directory in the terminal using:
 roslaunch video_handler THE_SETTINGS.launch
 ````
 
+Tunable parameters: 
+
+- stream_from_file: Set whether stream comes from a webcam or file. 
+- device_id: if previous flag false, set the device to /dev/video{device_id}
+- filepath: if flag to true, read from file at path provided (need to be absolute)
+- topicname: set the topic where images will be published
+- framerate: provide camera frame rate.
+- resize: defines whether resize the input frame.
+- newWidth, newHeigth: Set the new frame size if previous flag true
+
 Enjoy!

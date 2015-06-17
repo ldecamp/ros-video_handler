@@ -5,5 +5,9 @@
         <param name="filepath" value="/mnt/hgfs/Data/ants_videos/A8R9.m2ts" />
         <param name="topicname" value="/camera/image_raw" />
         <param name="framerate" value="30" />
+
+        <param name="resize" value="true" />
+        <param name="newWidth" value="960" />
+        <param name="newHeigth" value="540" />
     </node>
 </launch>

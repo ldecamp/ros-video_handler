@@ -22,12 +22,19 @@ int main(int argc, char ** argv)
   string filepath = "";
   string topicname = "";
   int framerate = 30;
+  bool resize_frame = false;
+  int res_width = 1;
+  int res_heigth = 1;
 
   _nh.getParam("stream_from_file", stream_from_file);
   _nh.getParam("device_id", device_id);
   _nh.getParam("filepath", filepath);
   _nh.getParam("framerate", framerate);
   _nh.getParam("topicname", topicname);
+
+  _nh.getParam("resize", resize_frame);
+  _nh.getParam("newWidth", res_width);
+  _nh.getParam("newHeigth", res_heigth);
 
   image_transport::ImageTransport _it(_nh);
   image_transport::Publisher _pub = _it.advertise("/camera/image_raw", 1);
@@ -57,12 +64,17 @@ int main(int argc, char ** argv)
 
   _image.encoding = "bgr8";
 
-  Size resized(1920 / 2, 1080 / 2);
+  Size newSize(res_width, res_heigth);
 
   while (ros::ok())
   {
-    *_camera >> _image.image;
-    cv::resize(_image.image, _image.image, resized);
+    if (!_camera->read(_image.image))
+      break;
+
+    if (resize_frame) {
+      cv::resize(_image.image, _image.image, newSize);
+    }
+
     _publishImage = _image.toImageMsg();
     _pub.publish(_publishImage);
     _looprate.sleep();

@@ -65,7 +65,8 @@ int main(int argc, char ** argv)
   _image.encoding = "bgr8";
 
   Size newSize(res_width, res_heigth);
-
+  int i = 1;
+  int c = 100;
   while (ros::ok())
   {
     if (!_camera->read(_image.image))
@@ -73,6 +74,17 @@ int main(int argc, char ** argv)
 
     if (resize_frame) {
       cv::resize(_image.image, _image.image, newSize);
+    }
+
+    if (c == 100) {
+      stringstream ss;
+      ss << "/mnt/hgfs/Data/calibration/19.06_2/img_" << i << ".jpg";
+      cout << ss.str() << endl;
+      cv::imwrite(ss.str(), _image.image);
+      i++;
+      c=0;
+    }else{
+      c++;
     }
 
     _publishImage = _image.toImageMsg();

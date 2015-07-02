@@ -40,10 +40,12 @@ int main(int argc, char ** argv)
   int res_width = 1;
   int res_heigth = 1;
   bool send_Reset = false;
+  bool send_Save = false;
 
   _nh.getParam("source", source);
   _nh.getParam("input", param);
   _nh.getParam("sendReset", send_Reset);
+  _nh.getParam("sendSave", send_Save);
 
   _nh.getParam("framerate", framerate);
   _nh.getParam("topicname", topicname);
@@ -64,7 +66,8 @@ int main(int argc, char ** argv)
 
   sensor_msgs::ImagePtr _publishImage;
   cv_bridge::CvImage _image;
-  _image.encoding = "bgr8";
+  _image.encoding = "mono8";
+  // _image.encoding = "bgr8";
   std_msgs::String orb_command;
 
   ros::Rate _looprate(framerate);
@@ -123,10 +126,14 @@ int main(int argc, char ** argv)
       //     break;
       //   }
       // }
+
       //if resize required resize
       if (resize_frame) {
         cv::resize(_image.image, _image.image, newSize);
       }
+      //convert to gray scale and normalise brightness
+      cv::cvtColor(_image.image,_image.image, CV_BGR2GRAY);
+      cv::equalizeHist(_image.image,_image.image);
 
       //publish image
       _publishImage = _image.toImageMsg();
@@ -141,11 +148,20 @@ int main(int argc, char ** argv)
 
 
     //if video finished publish reset to orb command
-    if (source != 0 && send_Reset) {
-      orb_command.data = "SaveAndResetMap";
+    if (source != 0 && send_Save) {
+      orb_command.data = "SaveMap";
       _pubCommands.publish(orb_command);
       //sleep 10 sec to give time to ORB to catch up.
-      sleep(10);
+      sleep(15);
+    }
+
+
+    //if video finished publish reset to orb command
+    if (source != 0 && send_Reset) {
+      orb_command.data = "ResetMap";
+      _pubCommands.publish(orb_command);
+      //sleep 10 sec to give time to ORB to catch up.
+      sleep(5);
     }
   }
 

@@ -8,7 +8,10 @@
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
 #include <image_transport/image_transport.h>
+#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 
+using namespace boost;
 using namespace std;
 using namespace cv;
 
@@ -40,6 +43,9 @@ int main(int argc, char ** argv)
   image_transport::Publisher _pub = _it.advertise("/camera/image_raw", 1);
   ROS_INFO("... topic published.");
 
+  vector<string> result;
+  split( result, filepath, is_any_of("/."), token_compress_on );
+  string  filename = result[result.size() - 2];
 
   sensor_msgs::ImagePtr _publishImage;
   cv_bridge::CvImage _image;
@@ -75,10 +81,11 @@ int main(int argc, char ** argv)
     if (resize_frame) {
       cv::resize(_image.image, _image.image, newSize);
     }
+    
 
     if (c == 100) {
       stringstream ss;
-      ss << "/mnt/hgfs/Data/calibration/19.06_2/img_" << i << ".jpg";
+      ss << "/mnt/hgfs/Data/videos/ants/extract/"<< filename << "/img_" << i << ".jpg";
       cout << ss.str() << endl;
       cv::imwrite(ss.str(), _image.image);
       i++;

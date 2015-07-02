@@ -10,10 +10,11 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
 )
 find_package(OpenCV REQUIRED)
+find_package(Boost REQUIRED)
 
 catkin_package()
 
-include_directories(${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
+include_directories(${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 add_executable(vhandler src/video_handler_node.cpp)
-target_link_libraries(vhandler ${OpenCV_LIBRARIES} ${catkin_LIBRARIES})
+target_link_libraries(vhandler ${OpenCV_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 

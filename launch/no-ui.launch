@@ -6,10 +6,13 @@
         <!-- for camera id of the device (ex:0)  -->
         <!-- for filepath mode absolute path to video file (ex: /mnt/hgfs/Data/videos/ants/18/A18R2.m2ts) -->
         <!-- for database absolute filepath to database  (ex: /mnt/hgfs/Data/analysis/input.db)-->
-        <!-- <param name="input" value="/mnt/hgfs/Data/videos/ants/1/Ant1ZVOP.m2ts" /> -->
-        <param name="input" value="/mnt/hgfs/Data/videos/ants/2/Ant2ZVSF.m2ts" />
+        <!-- <param name="input" value="/mnt/hgfs/Data/videos/ants/14/Ant14R4.m2ts" /> -->
+        <!-- <param name="input" value="/mnt/hgfs/Data/videos/ants/1/Ant1R2.m2ts" /> -->
+        <param name="input" value="/mnt/hgfs/Data/videos/ants/2/Ant2R10.m2ts" />
+        <!-- <param name="input" value="/mnt/hgfs/Data/videos/ants/losttracks/L_Ant2R10.m2ts" /> -->
         <!-- <param name="input" value="/mnt/hgfs/Data/analysis/video_paths/ant2.db" /> -->
-        <param name="sendReset" value="true" />
+        <param name="sendReset" value="false" />
+        <param name="sendSave" value="false" />
         <!-- Name of the topic to publish to -->
         <param name="topicname" value="/camera/image_raw" />
         <!-- Camera frame rate -->

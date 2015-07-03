@@ -68,7 +68,7 @@ int main(int argc, char ** argv)
   }
   ROS_INFO("... connected to video source.");
 
-  _image.encoding = "mono8";
+  _image.encoding = "bgr8";
 
   Size newSize(res_width, res_heigth);
   int i = 1;
@@ -81,11 +81,11 @@ int main(int argc, char ** argv)
     if (resize_frame) {
       cv::resize(_image.image, _image.image, newSize);
     }
-          //convert to gray scale and normalise brightness
-      cv::cvtColor(_image.image,_image.image, CV_BGR2GRAY);
-      cv::equalizeHist(_image.image,_image.image);
+      //     //convert to gray scale and normalise brightness
+      // cv::cvtColor(_image.image,_image.image, CV_BGR2GRAY);
+      // cv::equalizeHist(_image.image,_image.image);
 
-    if (c > 10) {
+    if (c > 50) {
       stringstream ss;
       ss << "/mnt/hgfs/Data/videos/ants/extract/"<< filename << "/img_" << i << ".jpg";
       cout << ss.str() << endl;

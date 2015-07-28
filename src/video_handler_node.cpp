@@ -24,6 +24,11 @@ using namespace boost;
 
 // int kbhit(void);
 vector<string> loadFromDatabase(const char* dbPath);
+//Helpers to match histograms between frames and videos
+void matchColorHistograms(const Mat& reference, const Mat& target, Mat& dest);
+void matchImageWithHistograms(const Mat& img, const Mat& cdfs, Mat& out);
+void buildCdfFromPixelIntensity(const Mat& channel, Mat& hist, Mat& cdf);
+void buildCdfsFromPixelIntensity(const Mat& image, Mat& cdfs);
 
 int main(int argc, char ** argv)
 {
@@ -34,6 +39,7 @@ int main(int argc, char ** argv)
   string param = "";
 
   string topicname = "";
+  string colorType = "bgr8";
   int framerate = 30;
   bool resize_frame = false;
   bool play_reversed = false;
@@ -41,11 +47,14 @@ int main(int argc, char ** argv)
   int res_heigth = 1;
   bool send_Reset = false;
   bool send_Save = false;
+  bool hist_matching = false;
 
   _nh.getParam("source", source);
   _nh.getParam("input", param);
   _nh.getParam("sendReset", send_Reset);
   _nh.getParam("sendSave", send_Save);
+  _nh.getParam("matchHistograms", hist_matching);
+  _nh.getParam("colorType", colorType);
 
   _nh.getParam("framerate", framerate);
   _nh.getParam("topicname", topicname);
@@ -66,7 +75,7 @@ int main(int argc, char ** argv)
 
   sensor_msgs::ImagePtr _publishImage;
   cv_bridge::CvImage _image;
-  _image.encoding = "mono8";
+  _image.encoding = colorType;
   // _image.encoding = "bgr8";
   std_msgs::String orb_command;
 
@@ -82,6 +91,9 @@ int main(int argc, char ** argv)
   }
 
   cout << "items to play: " << inputs.size() << endl;
+
+  bool compute_hist = true;
+  Mat cdfs_ref;
 
   for (unsigned int v = 0; v < inputs.size(); ++v)
   {
@@ -119,21 +131,29 @@ int main(int argc, char ** argv)
         return 0;
       }
 
-      // if (kbhit()) {
-      //   int c = getchar();   //check if database need to be saved.
-      //   if (c == 'n') {
-      //     cout << "Skipping to next video" << endl;
-      //     break;
-      //   }
-      // }
-
       //if resize required resize
       if (resize_frame) {
         cv::resize(_image.image, _image.image, newSize);
       }
-      //convert to gray scale and normalise brightness
-      cv::cvtColor(_image.image,_image.image, CV_BGR2GRAY);
-      cv::equalizeHist(_image.image,_image.image);
+
+      if (colorType == "mono8") {
+        //convert to gray scale and normalise brightness
+        cv::cvtColor(_image.image, _image.image, CV_BGR2GRAY);
+
+
+        if (hist_matching) {
+          if (compute_hist) {
+            buildCdfsFromPixelIntensity(_image.image, cdfs_ref);
+            compute_hist = false;
+          } else {
+            matchImageWithHistograms(_image.image, cdfs_ref, _image.image);
+          }
+        } 
+        // else {
+        //   cv::equalizeHist(_image.image, _image.image);
+        // }
+
+      }
 
       //publish image
       _publishImage = _image.toImageMsg();
@@ -208,31 +228,116 @@ std::vector<string> loadFromDatabase(const char* dbPath) {
   return result;
 }
 
+const double epsilon = 0.0001;
+const int bins = 256;
+void buildCdfFromPixelIntensity(const Mat& channel, Mat& hist, Mat& cdf) {
+  hist = Mat::zeros(1, bins, CV_64FC1);
+  cdf = Mat::zeros(1, bins, CV_64FC1);
+  //Compute histogram from intensity values
+  unsigned char *input = (unsigned char*)(channel.data);
+  for (int j = 0; j < channel.rows; j++) {
+    for (int i = 0; i < channel.cols; i++) {
+      int pix_val = static_cast<int>(input[channel.step * j + i]);
+      hist.at<double>(pix_val) += 1;
+    }
+  }
+  //Normalize and compute cdf
+  double minVal, maxVal;
+  minMaxLoc(hist, &minVal, &maxVal);
+  cdf.at<double>(0) = hist.at<double>(0);
+  for (int j = 1; j < bins; j++) {
+    cdf.at<double>(j) = cdf.at<double>(j - 1) + hist.at<double>(j);
+  }
+  // normalize cdf
+  cdf = cdf / cdf.at<double>(bins - 1);
+}
 
-// //Helper to detect if a key has been presses
-// int kbhit(void)
-// {
-//   struct termios oldt, newt;
-//   int ch;
-//   int oldf;
+void buildCdfsFromPixelIntensity(const Mat& image, Mat& cdfs) {
+  vector<Mat> channels;
+  cv::split(image, channels);
+  std::vector<Mat> cdf_per_channel;
+  cdf_per_channel.resize(channels.size());
+  //get cdf per channel and merge
+  for (unsigned int c = 0; c < channels.size(); c++) {
+    Mat hist_chan, cdf_chan;
+    buildCdfFromPixelIntensity(channels[c], hist_chan, cdf_chan);
+    cdf_per_channel[c] = cdf_chan;
+  }
+  cv::merge(cdf_per_channel, cdfs);
+}
 
-//   tcgetattr(STDIN_FILENO, &oldt);
-//   newt = oldt;
-//   newt.c_lflag &= ~(ICANON | ECHO);
-//   tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-//   oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
-//   fcntl(STDIN_FILENO, F_SETFL, oldf | O_NONBLOCK);
+void matchColorHistograms(const Mat& reference, const Mat& target, Mat& dest) {
+  vector<Mat> channels_ref;
+  cv::split(reference, channels_ref);
+  vector<Mat> channels_targ;
+  cv::split(target, channels_targ);
 
-//   ch = getchar();
+  if (channels_ref.size() != channels_targ.size()) {
+    cout << "Error: source and target must have same amout of channels" << endl;
+    return;
+  }
 
-//   tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-//   fcntl(STDIN_FILENO, F_SETFL, oldf);
+  for (unsigned int c = 0; c < channels_ref.size(); c++) {
+    Mat hist_ref, cdf_ref, hist_targ, cdf_targ;
+    buildCdfFromPixelIntensity(channels_ref[c], hist_ref, cdf_ref);
+    buildCdfFromPixelIntensity(channels_targ[c], hist_targ, cdf_targ);
+    Mat Mv(1, bins, CV_8UC1);
+    uchar* M = Mv.ptr<uchar>();
+    int current = 0;
+    //build LUT
+    for (int j = 0; j < cdf_targ.cols; j++) {
+      double F1t = cdf_targ.at<double>(j);
+      for (int k = current; k < cdf_ref.cols; k++) {
+        double F2s = cdf_ref.at<double>(k);
+        if (abs(F2s - F1t) < epsilon || F2s > F1t) {
+          M[j] = k;
+          current = k;
+          break;
+        }
+      }
+    }
+    Mat lut(1, bins, CV_8UC1, M);
+    cv::LUT(channels_targ[c], lut, channels_targ[c]);
+  }
 
-//   if (ch != EOF)
-//   {
-//     ungetc(ch, stdin);
-//     return 1;
-//   }
+  cv::merge(channels_targ, dest);
+}
 
-//   return 0;
-// }
+void matchImageWithHistograms(const Mat& img, const Mat& cdfs, Mat& out) {
+  vector<Mat> channels_cdfs;
+  cv::split(cdfs, channels_cdfs);
+  vector<Mat> channels_targ;
+  cv::split(img, channels_targ);
+
+  if (channels_cdfs.size() != channels_targ.size()) {
+    cout << "Error: source and target must have same amout of channels" << endl;
+    return;
+  }
+
+  for (unsigned int c = 0; c < channels_targ.size(); c++) {
+    Mat cdf_ref, hist_targ, cdf_targ;
+
+    cdf_ref = channels_cdfs[c];
+    buildCdfFromPixelIntensity(channels_targ[c], hist_targ, cdf_targ);
+
+    Mat Mv(1, bins, CV_8UC1);
+    uchar* M = Mv.ptr<uchar>();
+    int current = 0;
+    //build LUT
+    for (int j = 0; j < cdf_targ.cols; j++) {
+      double F1t = cdf_targ.at<double>(j);
+      for (int k = current; k < cdf_ref.cols; k++) {
+        double F2s = cdf_ref.at<double>(k);
+        if (abs(F2s - F1t) < epsilon || F2s > F1t) {
+          M[j] = k;
+          current = k;
+          break;
+        }
+      }
+    }
+    Mat lut(1, bins, CV_8UC1, M);
+    cv::LUT(channels_targ[c], lut, channels_targ[c]);
+  }
+
+  cv::merge(channels_targ, out);
+}

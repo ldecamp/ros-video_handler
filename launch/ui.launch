@@ -6,13 +6,16 @@
         <!-- for camera id of the device (ex:0)  -->
         <!-- for filepath mode absolute path to video file (ex: /mnt/hgfs/Data/videos/ants/18/A18R2.m2ts) -->
         <!-- for database absolute filepath to database  (ex: /mnt/hgfs/Data/analysis/input.db)-->
-        <!-- <param name="input" value="/mnt/hgfs/Data/videos/ants/2/Ant2R9.m2ts" /> -->
-        <param name="input" value="/mnt/hgfs/Data/videos/ants/2/Ant2R10.m2ts" />
-        <!-- <param name="input" value="/mnt/hgfs/Data/analysis/video_paths/ant1.db" /> -->
+        <param name="input" value="/mnt/hgfs/Data/videos/ants/14/Ant14R8.m2ts" />
+        <!-- <param name="input" value="/mnt/hgfs/Data/videos/ants/2/Ant2R10.m2ts" /> -->
+        <!-- <param name="input" value="/mnt/hgfs/Data/analysis/video_paths/mix.db" /> -->
         <!-- Name of the topic to publish to -->
         <param name="topicname" value="/camera/image_raw" />
         <!-- Camera frame rate -->
         <param name="framerate" value="50" />
+        <param name="matchHistograms" value="false" />
+        <!-- type of color encoding (mono8|bgr8) if mono8 defined convert color to BW -->
+        <param name="colorType" value="mono8" />
 
         <param name="resize" value="true" />
         <param name="newWidth" value="960" />

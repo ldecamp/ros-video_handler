@@ -73,6 +73,12 @@ int main(int argc, char ** argv)
   Size newSize(res_width, res_heigth);
   int i = 1;
   int c = 100;
+
+  stringstream fstname;
+  fstname << "/mnt/hgfs/Data/videos/ants/extract/" << filename << "/timestamps.txt";
+  ofstream tstamp;
+  tstamp.open (fstname.str());
+
   while (ros::ok())
   {
     if (!_camera->read(_image.image))
@@ -85,9 +91,11 @@ int main(int argc, char ** argv)
       // cv::cvtColor(_image.image,_image.image, CV_BGR2GRAY);
       // cv::equalizeHist(_image.image,_image.image);
 
-    if (c > 50) {
+    if (c > 2) {
       stringstream ss;
       ss << "/mnt/hgfs/Data/videos/ants/extract/"<< filename << "/img_" << i << ".jpg";
+
+      tstamp << "/img_" << i << ".jpg," << 
       cout << ss.str() << endl;
       cv::imwrite(ss.str(), _image.image);
       i++;
@@ -101,6 +109,8 @@ int main(int argc, char ** argv)
     _looprate.sleep();
     ros::spinOnce();
   }
+
+  myfile.close();
   return 0;
 }
 

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <ros/ros.h>
 #include <iostream>
+#include <fstream>
 #include <opencv/highgui.h>
 #include <opencv/cxcore.h>
 #include <opencv/cv.h>
@@ -76,8 +77,8 @@ int main(int argc, char ** argv)
 
   stringstream fstname;
   fstname << "/mnt/hgfs/Data/videos/ants/extract/" << filename << "/timestamps.txt";
-  ofstream tstamp;
-  tstamp.open (fstname.str());
+  ofstream ftstamp;
+  ftstamp.open(fstname.str().c_str());
 
   while (ros::ok())
   {
@@ -94,8 +95,8 @@ int main(int argc, char ** argv)
     if (c > 2) {
       stringstream ss;
       ss << "/mnt/hgfs/Data/videos/ants/extract/"<< filename << "/img_" << i << ".jpg";
+      ftstamp << "img_" << i << ".jpg," << _camera->get(CV_CAP_PROP_POS_MSEC) << "\n";
 
-      tstamp << "/img_" << i << ".jpg," << 
       cout << ss.str() << endl;
       cv::imwrite(ss.str(), _image.image);
       i++;
@@ -110,7 +111,7 @@ int main(int argc, char ** argv)
     ros::spinOnce();
   }
 
-  myfile.close();
+  ftstamp.close();
   return 0;
 }
 
